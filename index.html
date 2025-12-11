@@ -3,684 +3,1041 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RideBot — Rate Your Ride (Snow Edition)</title>
+  <title>ConnX TransitIQ — Rate Your Ride</title>
+
   <style>
     :root{
-      --bg:#0b1020;
-      --panel: rgba(255,255,255,0.08);
-      --panel2: rgba(255,255,255,0.05);
-      --border: rgba(255,255,255,0.14);
-      --text: rgba(255,255,255,0.92);
-      --muted: rgba(255,255,255,0.65);
+      /* ❄️ Snowy blue theme */
+      --ice0:#071a2f;
+      --ice1:#0a2a4a;
+      --ice2:#0e3a63;
+      --ice3:#2a5d88;
+
+      --card:#ffffff;
+      --text:#0b1220;
+      --muted:#334155;
+      --line:#d9e6f1;
+
       --mono: ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
       --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-      --shadow: 0 20px 70px rgba(0,0,0,0.55);
     }
 
-    html,body{
-      height:100%;
+    *{ box-sizing:border-box; }
+    html, body{ height: 100%; }
+
+    body{
       margin:0;
+      display:grid;
+      place-items:center;
       font-family: var(--sans);
       color: var(--text);
       background:
-        radial-gradient(900px 700px at 15% 5%, rgba(96,165,250,0.22), transparent 60%),
-        radial-gradient(900px 700px at 85% 92%, rgba(167,139,250,0.18), transparent 55%),
-        radial-gradient(700px 500px at 50% 50%, rgba(255,255,255,0.07), transparent 60%),
-        var(--bg);
-      display:grid;
-      place-items:center;
-      padding: 18px;
-      box-sizing:border-box;
+        radial-gradient(900px 520px at 18% 16%, rgba(255,255,255,0.10), transparent 60%),
+        radial-gradient(720px 440px at 82% 84%, rgba(42,93,136,0.25), transparent 55%),
+        linear-gradient(180deg, var(--ice2), var(--ice0));
     }
 
+    /* ✅ Shimmery icy widget */
     .app{
-      width: min(560px, 100%);
-      height: min(420px, 100%);
-      border-radius: 22px;
-      border: 1px solid var(--border);
-      background: linear-gradient(180deg, var(--panel), var(--panel2));
-      box-shadow: var(--shadow);
+      width: 500px;
+      height: 350px;
+      border-radius: 18px;
       overflow: hidden;
+      border: 1px solid rgba(217,230,241,0.92);
+      box-shadow:
+        0 18px 40px rgba(0,0,0,0.35),
+        0 2px 0 rgba(255,255,255,0.12) inset;
+      display:grid;
+      grid-template-rows: 46px 1fr 118px;
       position: relative;
-      display: grid;
-      grid-template-rows: auto 1fr auto;
+
+      background:
+        radial-gradient(12px 12px at 12% 22%, rgba(255,255,255,0.95), rgba(255,255,255,0) 60%),
+        radial-gradient(10px 10px at 78% 34%, rgba(255,255,255,0.90), rgba(255,255,255,0) 62%),
+        radial-gradient(8px 8px at 52% 70%, rgba(255,255,255,0.85), rgba(255,255,255,0) 62%),
+        radial-gradient(14px 14px at 90% 78%, rgba(255,255,255,0.88), rgba(255,255,255,0) 60%),
+        repeating-linear-gradient(
+          135deg,
+          rgba(42,93,136,0.00) 0px,
+          rgba(42,93,136,0.00) 6px,
+          rgba(42,93,136,0.045) 6px,
+          rgba(42,93,136,0.045) 8px
+        ),
+        linear-gradient(180deg, #ffffff, #f3fbff);
     }
+
+    /* shimmer sweep */
+    .app::before{
+      content:"";
+      position:absolute;
+      inset:-40%;
+      background: linear-gradient(
+        120deg,
+        rgba(255,255,255,0.00) 35%,
+        rgba(255,255,255,0.40) 45%,
+        rgba(255,255,255,0.00) 55%
+      );
+      transform: translateX(-45%) rotate(8deg);
+      animation: shimmerSweep 3.2s linear infinite;
+      pointer-events:none;
+      z-index: 1;
+      mix-blend-mode: screen;
+      opacity: 0.9;
+    }
+    .app > *{ position: relative; z-index: 2; }
+    @keyframes shimmerSweep{
+      0%   { transform: translateX(-45%) rotate(8deg); }
+      100% { transform: translateX(45%) rotate(8deg); }
+    }
+
+    /* Bold-ish */
+    .app, .app *{ font-weight: 650; }
+    .brand .name{ font-weight: 900; letter-spacing: 0.2px; }
 
     .topbar{
-      padding: 14px 16px;
+      padding: 10px 12px;
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      border-bottom: 1px solid rgba(255,255,255,0.10);
-      background: rgba(0,0,0,0.15);
-    }
-    .brand{display:flex;align-items:center;gap:10px;user-select:none;}
-    .botIcon{
-      width: 34px; height: 34px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.16);
-      background:
-        radial-gradient(14px 14px at 35% 35%, rgba(255,255,255,0.18), transparent 60%),
-        linear-gradient(135deg, rgba(96,165,250,0.35), rgba(167,139,250,0.28));
-      display:grid;place-items:center;
-      font-weight: 900;letter-spacing: -0.5px;
-    }
-    .brandText{display:grid; gap:2px;}
-    .brandText .name{font-weight: 800; font-size: 14px; line-height: 1;}
-    .brandText .status{font-size: 11px; color: var(--muted); line-height: 1;}
-    .pill{
-      font-family: var(--mono);
-      font-size: 11px;
-      padding: 8px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.16);
-      background: rgba(255,255,255,0.06);
-      color: rgba(255,255,255,0.80);
-      user-select:none;
-      white-space: nowrap;
+      border-bottom: 1px solid var(--line);
+      background: rgba(240, 252, 255, 0.70);
+      position: relative;
     }
 
+    .brand{ display:flex; flex-direction:column; gap:2px; user-select:none; }
+    .brand .name{ font-size: 13px; line-height:1; }
+    .brand .status{ font-size: 11px; color: var(--muted); line-height:1.2; }
+
+    /* fake progress */
+    .fakeProgress{
+      position:absolute;
+      left: 12px;
+      right: 12px;
+      bottom: -6px;
+      height: 9px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.90);
+      pointer-events:none;
+      overflow:hidden;
+      opacity: 0.95;
+    }
+    .fakeProgress > i{
+      display:block;
+      height: 100%;
+      width: 23%;
+      background: rgba(42,93,136,0.14);
+      border-right: 1px solid rgba(42,93,136,0.22);
+      animation: fakeLoad 4.8s ease-in-out infinite;
+    }
+    @keyframes fakeLoad{
+      0%{ transform: translateX(0%); }
+      50%{ transform: translateX(240%); }
+      100%{ transform: translateX(0%); }
+    }
+
+    /* ❄️ Snow-themed chat backdrop */
     .chat{
-      padding: 14px 14px;
+      padding: 10px 12px;
       overflow: auto;
       display:flex;
-      flex-direction: column;
-      gap: 10px;
+      flex-direction:column;
+      gap:9px;
+
+      position: relative;
+      transform: rotate(-0.35deg); /* bad ui */
+      transform-origin: top left;
+
+      background:
+        radial-gradient(10px 10px at 12% 18%, rgba(255,255,255,0.95) 0 35%, rgba(255,255,255,0) 60%),
+        radial-gradient(8px 8px at 76% 26%, rgba(255,255,255,0.90) 0 35%, rgba(255,255,255,0) 60%),
+        radial-gradient(7px 7px at 42% 64%, rgba(255,255,255,0.92) 0 35%, rgba(255,255,255,0) 60%),
+        radial-gradient(9px 9px at 88% 72%, rgba(255,255,255,0.88) 0 35%, rgba(255,255,255,0) 60%),
+        linear-gradient(180deg, rgba(214,241,255,0.92), rgba(255,255,255,0.80));
+
+      border-top: 1px solid rgba(217,230,241,0.9);
     }
 
-    .bubbleRow{display:flex;gap:10px;align-items:flex-end;}
-    .bubbleRow.user{justify-content:flex-end;}
-    .bubbleRow.bot{justify-content:flex-start;}
+    .chat::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:
+        radial-gradient(200px 140px at 18% 18%, rgba(42,93,136,0.12), transparent 62%),
+        radial-gradient(220px 160px at 82% 86%, rgba(42,93,136,0.11), transparent 62%),
+
+        radial-gradient(circle at 18% 22%, rgba(255,255,255,0.34) 0 2px, transparent 3px),
+        radial-gradient(circle at 32% 38%, rgba(255,255,255,0.30) 0 2px, transparent 3px),
+        radial-gradient(circle at 48% 28%, rgba(255,255,255,0.35) 0 2px, transparent 3px),
+        radial-gradient(circle at 60% 52%, rgba(255,255,255,0.30) 0 2px, transparent 3px),
+        radial-gradient(circle at 74% 34%, rgba(255,255,255,0.36) 0 2px, transparent 3px),
+        radial-gradient(circle at 86% 62%, rgba(255,255,255,0.32) 0 2px, transparent 3px),
+        radial-gradient(circle at 40% 74%, rgba(255,255,255,0.34) 0 2px, transparent 3px),
+        radial-gradient(circle at 68% 80%, rgba(255,255,255,0.30) 0 2px, transparent 3px);
+      opacity: 0.75;
+      filter: blur(0.2px);
+      animation: snowDrift 7s linear infinite;
+    }
+
+    @keyframes snowDrift{
+      0%   { transform: translateY(-6px) translateX(0px); }
+      50%  { transform: translateY(6px) translateX(6px); }
+      100% { transform: translateY(-6px) translateX(0px); }
+    }
+
+    .chat::before{
+      content:"ConnX TransitIQ • definitely official • v0.0.0.0.1";
+      position:absolute;
+      top: 6px;
+      right: 10px;
+      font-family: var(--mono);
+      font-size: 9px;
+      color: rgba(15,23,42,0.14);
+      transform: rotate(2.3deg);
+      pointer-events:none;
+      user-select:none;
+      white-space:nowrap;
+      z-index: 2;
+    }
+
+    .row{ display:flex; gap:8px; align-items:flex-end; }
+    .row.user{ justify-content:flex-end; }
+    .row.bot{ justify-content:flex-start; }
 
     .avatar{
-      width: 26px; height: 26px;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.14);
-      background: rgba(255,255,255,0.06);
-      display:grid;place-items:center;
-      font-size: 12px;
+      width: 24px; height: 24px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      display:grid; place-items:center;
+      font-size: 11px;
       user-select:none;
+      background: rgba(255,255,255,0.90);
       flex: 0 0 auto;
+      font-weight: 900;
     }
 
     .bubble{
       max-width: 78%;
-      border-radius: 16px;
-      padding: 10px 12px;
-      border: 1px solid rgba(255,255,255,0.10);
-      background: rgba(0,0,0,0.20);
-      line-height: 1.35;
-      font-size: 13px;
-      position:relative;
-      overflow:hidden;
+      border-radius: 14px;
+      padding: 8px 10px;
+      border: 1px solid rgba(217,230,241,0.95);
+      background: rgba(255,255,255,0.90);
+      font-size: 12px;
+      line-height: 1.28;
+      position: relative;
     }
-
-    .bubble.bot{
-      background:
-        radial-gradient(180px 70px at 20% 20%, rgba(96,165,250,0.14), transparent 60%),
-        rgba(0,0,0,0.22);
-    }
-    .bubble.user{
-      background:
-        radial-gradient(180px 70px at 80% 20%, rgba(167,139,250,0.16), transparent 60%),
-        rgba(0,0,0,0.22);
+    .bubble::after{
+      content:"PRIORITY";
+      position:absolute;
+      top:-8px;
+      right:10px;
+      font-size: 8px;
+      font-family: var(--mono);
+      color: rgba(10,42,74,0.70);
+      background: rgba(42,93,136,0.10);
+      border: 1px solid rgba(42,93,136,0.18);
+      padding: 2px 6px;
+      border-radius: 999px;
+      transform: rotate(2.6deg);
+      opacity: 0.55;
+      pointer-events:none;
+      user-select:none;
+      font-weight: 900;
     }
 
     .meta{
-      font-family: var(--mono);
-      font-size: 11px;
-      color: rgba(255,255,255,0.62);
       margin-top: 6px;
+      color: var(--muted);
+      font-size: 10px;
+      font-family: var(--mono);
       user-select:none;
+      font-weight: 750;
     }
 
-    .composerWrap{
-      border-top: 1px solid rgba(255,255,255,0.10);
-      padding: 12px 12px;
-      background: rgba(0,0,0,0.15);
-      display:grid;
-      gap: 10px;
+    .ratingStage{
+      position: relative;
+      border-top: 1px solid var(--line);
+      background: rgba(240, 252, 255, 0.70);
+      padding: 8px 12px 10px;
+      height: 118px;
+      overflow: hidden;
     }
 
-    .quickTitle{
+    .stageHint{
       display:flex;
       justify-content:space-between;
       align-items:center;
       gap:10px;
-      color: rgba(255,255,255,0.70);
       font-size: 11px;
+      color: var(--muted);
       user-select:none;
-    }
-
-    .quickRow{
-      display:flex;
-      flex-direction: row-reverse; /* 5..1 visually */
-      gap: 10px;
-      justify-content: space-between;
-      flex-wrap: nowrap;
-    }
-
-    .qr{
-      flex: 1 1 0;
-      min-width: 0;
-      border-radius: 14px;
-      padding: 10px 10px;
-      border: 1px solid rgba(255,255,255,0.16);
-      background: rgba(255,255,255,0.06);
-      color: rgba(255,255,255,0.90);
-      cursor:pointer;
+      margin-bottom: 6px;
+      margin-left: 2px;
+      animation: hintJitter 3.4s ease-in-out infinite;
+      transform-origin: left center;
       font-weight: 800;
-      font-size: 12px;
+    }
+    @keyframes hintJitter{
+      0%,100%{ transform: translateX(0); }
+      47%{ transform: translateX(1px); }
+      53%{ transform: translateX(-1px); }
+    }
+
+    /* rating buttons match dark snow-night */
+    .rateBtn{
+      position: absolute;
+      width: 84px;
+      height: 32px;
+      border-radius: 10px;
+
+      background: var(--ice0);
+      color: #ffffff;
+      border: 1px solid rgba(255,255,255,0.22);
+
       user-select:none;
-      display:grid;
-      place-items:center;
-      gap: 4px;
+      outline:none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
 
-      --tx: 0px; --ty: 0px;
-      transform: translate(var(--tx), var(--ty));
-      transition: transform 220ms cubic-bezier(.2,.9,.2,1.2), background 120ms ease, border-color 120ms ease;
-      position: relative;
-    }
-    .qr:hover{ background: rgba(255,255,255,0.10); }
-    .qr:active{ background: rgba(255,255,255,0.12); }
-
-    .qr small{
-      font-weight: 700;
-      font-size: 10px;
-      color: rgba(255,255,255,0.70);
-      letter-spacing: 0.2px;
-    }
-
-    .qr.flee{
-      border-color: rgba(255,255,255,0.22);
-      background: rgba(255,255,255,0.08);
-    }
-
-    .actions{
       display:flex;
-      gap: 10px;
       align-items:center;
-      flex-wrap: wrap;
-    }
-    .btn{
-      border-radius: 14px;
-      padding: 10px 12px;
-      border: 1px solid rgba(255,255,255,0.16);
-      background: rgba(255,255,255,0.06);
-      color: var(--text);
-      cursor:pointer;
-      font-weight: 800;
-      transition: transform 120ms ease, background 120ms ease;
-      user-select:none;
-    }
-    .btn:hover{ transform: translateY(-1px); background: rgba(255,255,255,0.10); }
-    .btn:active{ transform: translateY(0) scale(0.99); }
-    .btn.primary{
-      border-color: rgba(96,165,250,0.35);
-      background: rgba(96,165,250,0.14);
-    }
-    .btn.danger{
-      border-color: rgba(248,113,113,0.35);
-      background: rgba(248,113,113,0.14);
-    }
-    .btn.disabled{
-      opacity: 0.55;
-      cursor: not-allowed;
-      transform: none !important;
-    }
+      justify-content:center;
 
-    .note{
-      flex: 1 1 auto;
+      left: 0;
+      top: 0;
+
+      transform: translate3d(var(--x, 0px), var(--y, 0px), 0);
+      transition: transform 70ms linear, filter 120ms ease, border-color 120ms ease;
+      will-change: transform;
+      z-index: 2;
+
+      pointer-events: none; /* cursor never meets buttons */
+    }
+    .rateBtn:hover{ filter: brightness(1.12); border-color: rgba(255,255,255,0.34); }
+    .rateBtn *{ pointer-events:none; }
+
+    .inner{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap: 7px;
+      width: 100%;
+      height: 100%;
+      font-size: 12px;
+      font-weight: 950;
+      transform: scale(1);
+      transition: transform 70ms ease;
+    }
+    .rateBtn.flinch .inner{ transform: scale(0.66); }
+
+    .tag{
       font-family: var(--mono);
-      font-size: 11px;
-      color: rgba(255,255,255,0.65);
-      padding: 10px 12px;
-      border-radius: 14px;
-      background: rgba(0,0,0,0.22);
-      border: 1px solid rgba(255,255,255,0.12);
-      min-width: 180px;
+      font-weight: 950;
+      font-size: 10px;
+      color: rgba(255,255,255,0.82);
     }
 
-    /* ✅ Snow overlay */
-    .snow{
+    .ropeOverlay{ position:absolute; inset:0; pointer-events:none; z-index:60; }
+    .ropeLine{
+      position:absolute;
+      left: 0;
+      top: 0;
+      height: 2px;
+      width: 120px;
+      transform-origin: left center;
+      background: repeating-linear-gradient(
+        90deg,
+        rgba(10,42,74,0.0) 0px,
+        rgba(10,42,74,0.0) 6px,
+        rgba(10,42,74,0.70) 6px,
+        rgba(10,42,74,0.70) 9px
+      );
+      opacity: 0;
+      filter: drop-shadow(0 1px 0 rgba(0,0,0,0.06));
+    }
+    .ropeLine.on{ opacity: 1; }
+
+    .pullScene{ position: relative; height: 120px; margin-top: -2px; width: 78%; }
+    .pullBotWrap{
+      position:absolute;
+      right: 0;
+      bottom: 0;
+      width: 210px;
+      height: 120px;
+      border-radius: 16px;
+      border: 1px solid rgba(217,230,241,0.95);
+      background: rgba(255,255,255,0.92);
+      box-shadow: 0 10px 16px rgba(15,23,42,0.10);
+      padding: 9px 10px;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: popIn 260ms ease-out forwards;
+    }
+    @keyframes popIn{ to{ opacity:1; transform: translateY(0); } }
+
+    .pullBotHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom: 6px;
+      user-select:none;
+      font-weight: 900;
+    }
+    .pullBotHeader .name{ font-weight: 950; font-size: 11px; }
+    .pullBotHeader .status{
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--muted);
+      white-space:nowrap;
+      transform: translateY(1px);
+      font-weight: 850;
+    }
+
+    .robot{ position:absolute; right: 10px; bottom: 8px; width: 145px; height: 98px; }
+
+    .heldChip{
+      position:absolute;
+      left: 10px;
+      bottom: 10px;
+      height: 26px;
+      padding: 0 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(10,42,74,0.18);
+      background: rgba(42,93,136,0.08);
+      color: var(--text);
+      display:flex;
+      align-items:center;
+      gap:6px;
+      font-size: 11px;
+      opacity: 0;
+      transform: translateY(4px);
+      animation: chipIn 220ms ease-out forwards;
+      animation-delay: 820ms;
+      white-space: nowrap;
+      font-weight: 950;
+    }
+    @keyframes chipIn{ to{ opacity:1; transform: translateY(0); } }
+
+    .armTug{
+      transform-origin: 112px 44px;
+      animation: tug 220ms ease-in-out infinite;
+      animation-play-state: paused;
+    }
+    .tugging .armTug{ animation-play-state: running; }
+    @keyframes tug{
+      0%,100%{ transform: rotate(0deg) translateX(0); }
+      50%{ transform: rotate(-9deg) translateX(-2px); }
+    }
+
+    .helpToast{
+      position:absolute;
+      left: 10px;
+      bottom: 10px;
+      font-family: var(--mono);
+      font-size: 9px;
+      color: rgba(10,42,74,0.88);
+      background: rgba(255,255,255,0.72);
+      border: 1px dashed rgba(42,93,136,0.25);
+      padding: 6px 7px;
+      border-radius: 10px;
+      opacity: 0;
+      transform: translateY(6px);
+      pointer-events:none;
+      user-select:none;
+      max-width: 320px;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      font-weight: 900;
+      z-index: 70;
+    }
+    .helpToast.on{
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 140ms ease, transform 140ms ease;
+    }
+
+    /* 🎄 Emoji flood overlay */
+    .emojiFlood{
       position:absolute;
       inset:0;
-      pointer-events:none;
-      overflow:hidden;
-      z-index: 50;
+      z-index: 80;
+      display:none;
+      background: rgba(220, 246, 255, 0.94);
+      backdrop-filter: blur(1px);
+      padding: 10px;
     }
-    .flake{
-      position:absolute;
-      top:-40px;
-      font-size: 16px;
-      opacity: 0.95;
-      filter: drop-shadow(0 12px 18px rgba(0,0,0,0.35));
-      animation-name: fall;
-      animation-timing-function: linear;
-      animation-fill-mode: forwards;
-      will-change: transform, opacity;
+    .emojiFlood.on{ display:block; }
+    .emojiFlood .grid{
+      height: 100%;
+      width: 100%;
+      display:grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 6px;
+      place-items:center;
+      font-size: 18px;
       user-select:none;
+      transform: rotate(1.2deg);
+      opacity: 0.95;
     }
-    @keyframes fall{
-      0%   { transform: translate3d(0,0,0) rotate(0deg); opacity: 0; }
-      10%  { opacity: 1; }
-      100% { transform: translate3d(var(--drift), 520px, 0) rotate(var(--spin)); opacity: 0; }
-    }
-
-    .typing{
-      display:inline-flex;
-      gap: 4px;
-      align-items:center;
-      margin-left: 6px;
-    }
-    .dot{
-      width: 6px; height: 6px;
+    .emojiFlood .caption{
+      position:absolute;
+      top: 8px;
+      left: 10px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: rgba(10,42,74,0.75);
+      background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(42,93,136,0.20);
       border-radius: 999px;
-      background: rgba(255,255,255,0.55);
-      animation: bop 900ms ease-in-out infinite;
-    }
-    .dot:nth-child(2){ animation-delay: 120ms; }
-    .dot:nth-child(3){ animation-delay: 240ms; }
-    @keyframes bop{
-      0%,100%{ transform: translateY(0); opacity:0.6;}
-      50%{ transform: translateY(-4px); opacity:1;}
+      padding: 4px 8px;
+      font-weight: 900;
     }
   </style>
 </head>
 
 <body>
-  <div class="app" id="app">
+  <div class="app" id="appRoot">
+    <div class="ropeOverlay" aria-hidden="true">
+      <div class="ropeLine" id="ropeLine"></div>
+    </div>
+
     <div class="topbar">
       <div class="brand">
-        <div class="botIcon">RB</div>
-        <div class="brandText">
-          <div class="name">RideBot</div>
-          <div class="status" id="statusLine">Online • calibrating your “truth”</div>
-        </div>
+        <div class="name">RideBot</div>
+        <div class="status" id="statusLine">Online • collecting snow-day vibes</div>
       </div>
-      <div class="pill" id="pill">mode: CALIBRATION</div>
+      <!-- ✅ Reset button removed -->
+      <div class="fakeProgress" aria-hidden="true"><i></i></div>
     </div>
 
     <div class="chat" id="chat">
-      <div class="bubbleRow bot">
+      <div class="row bot">
         <div class="avatar">🤖</div>
-        <div class="bubble bot">
-          Hi! I’m RideBot. I can help you rate your ride.
-          <div class="meta">We value your feedback. We also value cardio.</div>
-        </div>
-      </div>
-
-      <div class="bubbleRow bot">
-        <div class="avatar">🤖</div>
-        <div class="bubble bot">
-          Calibration mode: make 4 attempts. Then you may submit your actual opinion.
-          <div class="meta">Hover 1–3 to watch them develop independence.</div>
+        <div class="bubble">
+          Welcome to <b>ConnX TransitIQ</b> — tell us how your ride went.
+          We’ll handle your feedback like a winter timetable: brave, optimistic, and slightly fictional.
+          <div class="meta">Tip: click <i>near</i> a rating. Direct contact is not permitted. For… “safety”.</div>
         </div>
       </div>
     </div>
 
-    <div class="composerWrap">
-      <div class="quickTitle">
-        <span>Quick replies</span>
-        <span style="font-family:var(--mono); opacity:0.9;" id="triesText">calibration: 0/4</span>
+    <div class="ratingStage" id="stage" aria-label="Rating area">
+      <div class="stageHint">
+        <span>Click near a rating (auto-submits)</span>
+        <!-- ✅ removed "fits 500×350" label -->
       </div>
 
-      <div class="quickRow" id="quickRow">
-        <button class="qr" type="button" data-rate="1">1 ⭐<small>“tragic”</small></button>
-        <button class="qr" type="button" data-rate="2">2 ⭐<small>“oof”</small></button>
-        <button class="qr" type="button" data-rate="3">3 ⭐<small>“meh”</small></button>
-        <button class="qr" type="button" data-rate="4">4 ⭐<small>“nice”</small></button>
-        <button class="qr" type="button" data-rate="5">5 ⭐<small>“blessed”</small></button>
+      <div class="helpToast" id="helpToast">Helpful tip: your cursor is not authorized to make contact.</div>
+
+      <div class="emojiFlood" id="emojiFlood" aria-hidden="true">
+        <div class="caption">Holiday Service Advisory: emoji replacement buses</div>
+        <div class="grid" id="emojiGrid"></div>
       </div>
 
-      <div class="actions">
-        <div class="note" id="note">Calibration: hover 1/2/3 if you crave suffering.</div>
-        <button class="btn danger" id="resetBtn" type="button">Reset</button>
-        <button class="btn primary disabled" id="submitBtn" type="button">Submit</button>
-      </div>
+      <button class="rateBtn" type="button" data-rate="1" aria-label="Rate 1"><div class="inner"><span>💀</span><span class="tag">-1</span></div></button>
+      <button class="rateBtn" type="button" data-rate="2" aria-label="Rate 2"><div class="inner"><span>🥶</span><span class="tag">-2</span></div></button>
+      <button class="rateBtn" type="button" data-rate="3" aria-label="Rate 3"><div class="inner"><span>🤷</span><span class="tag">-3</span></div></button>
+      <button class="rateBtn" type="button" data-rate="4" aria-label="Rate 4"><div class="inner"><span>🔥</span><span class="tag">-4</span></div></button>
+      <button class="rateBtn" type="button" data-rate="5" aria-label="Rate 5"><div class="inner"><span>✨</span><span class="tag">-5</span></div></button>
     </div>
-
-    <!-- ✅ snow overlay container -->
-    <div class="snow" id="snow" aria-hidden="true"></div>
   </div>
 
   <script>
-    const app = document.getElementById('app');
+    const appRoot = document.getElementById('appRoot');
     const chat = document.getElementById('chat');
-    const quickRow = document.getElementById('quickRow');
-    const triesText = document.getElementById('triesText');
-    const note = document.getElementById('note');
-    const resetBtn = document.getElementById('resetBtn');
-    const submitBtn = document.getElementById('submitBtn');
     const statusLine = document.getElementById('statusLine');
-    const snow = document.getElementById('snow');
-    const pill = document.getElementById('pill');
+    const stage = document.getElementById('stage');
+    const buttons = [...stage.querySelectorAll('.rateBtn')];
+    const ropeLine = document.getElementById('ropeLine');
+    const helpToast = document.getElementById('helpToast');
+    const emojiFlood = document.getElementById('emojiFlood');
+    const emojiGrid = document.getElementById('emojiGrid');
 
-    const CALIBRATION_TRIES = 4;
-
-    let tries = 0;
-    let unlocked = false;
     let submitted = false;
+    let isPulling = false;
+    let stopHoverAndComments = false;
 
-    let userPicked = null;
-    let displayed = null;
+    const PAD = 10;
+    const SAFE_GAP = 14;
 
-    const fleeState = new Map([
-      [1, {dx: 0, dy: 0, n: 0}],
-      [2, {dx: 0, dy: 0, n: 0}],
-      [3, {dx: 0, dy: 0, n: 0}],
-    ]);
+    // tougher to click
+    const HOP_COOLDOWN = 40;
+    const CHAOS = 0.82;
 
-    let lastHoverQuipAt = 0;
+    // cursor avoidance + hard click proximity
+    const AVOID_RADIUS = 64;
+    const CLICK_SNAP_RADIUS = 22;
 
-    const sarcasmHover = [
-      "Oh wow, you *almost* clicked it. Inspirational.",
-      "Button says: ‘Not today.’ Honestly? Fair.",
-      "We detected honesty approaching. Executing emergency dodge.",
-      "Bold of you to assume the UI is here to help you.",
-      "The low rating has entered its ✨avoidant era✨."
+    // every 5 hover attempts -> emoji flood 10s
+    let hoverCount = 0;
+    let floodActive = false;
+    let floodTimer = null;
+    const christmasEmojis = ["🎄","🎅","🤶","🧑‍🎄","🦌","🛷","🎁","🔔","❄️","☃️","🌟","🕯️","🍪","🥛","🍫","🧦","🎶","🧤","🧣","🧊"];
+
+    const targets = [
+      { ax: 0.06, ay: 0.20 }, { ax: 0.72, ay: 0.20 },
+      { ax: 0.06, ay: 0.72 }, { ax: 0.72, ay: 0.72 },
+      { ax: 0.39, ay: 0.20 }, { ax: 0.39, ay: 0.72 },
+      { ax: 0.06, ay: 0.46 }, { ax: 0.72, ay: 0.46 },
+      { ax: 0.39, ay: 0.46 },
     ];
-    const sarcasmHoverEscalation = [
-      "Still chasing it? I admire the commitment to suffering.",
-      "At this point we should charge you for personal training.",
-      "Your cursor has ambition. The button has boundaries.",
-      "I’m logging this as ‘user enjoys puzzles’ to protect everyone’s feelings.",
-      "Congrats, you’ve discovered: consequences."
+
+    const laneOffsets = new Map();
+    buttons.forEach((b, i) => laneOffsets.set(Number(b.dataset.rate), i));
+
+    let hopIdx = 0;
+    let lastHopAt = 0;
+
+    const hoverComments = [
+      "Approach detected. Dispatching evasive maneuvers.",
+      "For your safety, the button has changed platforms.",
+      "Contact not permitted. Please click the *idea* of the button.",
+      "Your cursor is too confident. We fixed that.",
+      "Transit policy: no direct connections without a transfer.",
+      "Holiday schedule: all buttons are on a detour route.",
+      "Mind the gap between your cursor and this rating.",
+      "Snow day rules: the button is now “operating with delays.”"
     ];
-    const sarcasmClickCal = [
-      "Calibration click received. This will definitely matter. (It won’t.)",
-      "Thank you. I will treasure this data in a sealed vault labeled ‘No’.",
-      "Excellent. I can now ignore you with greater accuracy.",
-      "Love that for you. Bureaucracy is thriving.",
-      "Attempt logged. Reality remains unchanged."
-    ];
-    const unlockQuips = [
-      "✅ Calibration complete. You may now submit your *actual* rating. Try not to be honest too loudly.",
-      "Unlocked! Real feedback is now permitted. For legal reasons, this is a joke.",
-      "Permission granted. Please remember: numbers have feelings."
-    ];
-    const postUnlockLines = {
-      high: [
-        "Amazing. A high rating. My favorite genre of truth.",
-        "Thank you for your enthusiasm. The dashboard is delighted.",
-        "Wonderful. Your positivity has been safely stored."
-      ],
-      mid: [
-        "Noted. A medium rating. The most emotionally beige choice possible.",
-        "Three stars. The Switzerland of opinions.",
-        "A balanced take. The system dislikes nuance."
-      ],
-      low: [
-        "A low rating? How brave. How inconvenient.",
-        "I see. Criticism. In *this* economy.",
-        "We will forward this to the Feelings Department for review."
-      ]
+    let lastHoverLine = "";
+
+    const submitComments = {
+      1: ["💀 Noted. Forwarded to ‘Feelings & Delays’.","A 1/5. Logged under: ‘investigate everything’.","Route status: ‘temporarily suspended’."],
+      2: ["🥶 A 2/5. Emotionally refrigerated.","Noted. Warming it up in a meeting next quarter.","Filed as: ‘needs improvement (festive edition)’."],
+      3: ["🤷 A 3/5. The rating of: ‘it happened’.","Neutral. Like a timetable PDF at 2% zoom.","A solid ‘meh’. Transit’s most consistent KPI."],
+      4: ["🔥 A 4/5! Printing this for morale.","Nice. If only transfers were this successful.","Classified as: ‘surprisingly fine’."],
+      5: ["✨ A 5/5?! Are you rating the ride or the concept of transit?","Incredible. This will be used to justify everything.","Citing this in ‘Customer Delight (Real)’."]
     };
-    const metaSnips = [
-      "telemetry: stored",
-      "model: passive-aggressive-v1",
-      "confidence: 0.77 (unearned)",
-      "routing: /feedback/feelings",
-      "status: surprisingly petty"
-    ];
+    let lastSubmitLine = "";
 
-    function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+    function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+    function pickNoRepeat(arr, last){
+      if (arr.length <= 1) return arr[0] || "";
+      let v = pick(arr);
+      while (v === last) v = pick(arr);
+      return v;
+    }
     function scrollToBottom(){ chat.scrollTop = chat.scrollHeight; }
 
-    function addBubble(who, text, meta){
+    function addBubble(who, html, meta){
       const row = document.createElement('div');
-      row.className = `bubbleRow ${who}`;
-
+      row.className = `row ${who}`;
       const avatar = document.createElement('div');
       avatar.className = 'avatar';
       avatar.textContent = who === 'bot' ? '🤖' : '🧑';
-
       const bubble = document.createElement('div');
-      bubble.className = `bubble ${who}`;
-      bubble.textContent = text;
-
+      bubble.className = 'bubble';
+      bubble.innerHTML = html;
       if (meta){
         const m = document.createElement('div');
         m.className = 'meta';
         m.textContent = meta;
         bubble.appendChild(m);
       }
-
       if (who === 'bot'){ row.appendChild(avatar); row.appendChild(bubble); }
       else { row.appendChild(bubble); row.appendChild(avatar); }
-
       chat.appendChild(row);
       scrollToBottom();
     }
 
-    function addTyping(){
-      statusLine.innerHTML = `Typing<span class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>`;
-    }
-    function clearTyping(){
-      statusLine.textContent = unlocked ? "Online • accepting feedback (begrudgingly)" : "Online • calibrating your ‘truth’";
+    function botTalk(text){
+      if (stopHoverAndComments) return;
+      addBubble('bot', text, Math.random() < 0.5 ? "snow mode: on" : "ETA: unknown");
     }
 
-    function computeDisplayed(clicked){
-      // original gag: 1 becomes 3
-      if (clicked === 1) return 3;
-      return clicked;
+    function setPos(btn, x, y){
+      btn.style.setProperty("--x", `${x}px`);
+      btn.style.setProperty("--y", `${y}px`);
+    }
+    function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+    function getStageMetrics(btn){
+      const stageRect = stage.getBoundingClientRect();
+      const btnRect = btn.getBoundingClientRect();
+      const hint = stage.querySelector('.stageHint');
+      const hintRect = hint.getBoundingClientRect();
+      const usableTop = (hintRect.height + 8);
+      const usableHeight = stageRect.height - usableTop;
+      const usableWidth = stageRect.width;
+      return { usableTop, usableWidth, usableHeight, btnW: btnRect.width, btnH: btnRect.height };
     }
 
-    function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+    function computeTargetPixel(ax, ay, btn){
+      const m = getStageMetrics(btn);
+      const minX = PAD;
+      const maxX = m.usableWidth - m.btnW - PAD;
+      const minY = m.usableTop + PAD;
+      const maxY = m.usableTop + (m.usableHeight - m.btnH - PAD);
+      const x = clamp(minX + ax * (maxX - minX), minX, maxX);
+      const y = clamp(minY + ay * (maxY - minY), minY, maxY);
+      return { x, y, m };
+    }
 
-    // ✅ Snow burst (replaces cheese)
-    function snowBurst(intensity){
-      const rect = app.getBoundingClientRect();
-      const glyphs = ["❄️","❅","❆","✶","✳️"];
-      for (let i = 0; i < intensity; i++){
-        const flake = document.createElement('div');
-        flake.className = 'flake';
-        flake.textContent = glyphs[Math.floor(Math.random()*glyphs.length)];
-
-        flake.style.left = `${Math.random() * (rect.width - 20)}px`;
-        const size = 12 + Math.random()*14; // 12..26px
-        flake.style.fontSize = `${size}px`;
-
-        const drift = (-60 + Math.random()*120).toFixed(0) + "px"; // -60..60px
-        const spin = (-180 + Math.random()*360).toFixed(0) + "deg";
-        flake.style.setProperty('--drift', drift);
-        flake.style.setProperty('--spin', spin);
-
-        const dur = (900 + Math.random()*1100).toFixed(0) + "ms";
-        flake.style.animationDuration = dur;
-
-        const delay = (Math.random()*110).toFixed(0) + "ms";
-        flake.style.animationDelay = delay;
-
-        snow.appendChild(flake);
-        flake.addEventListener('animationend', () => flake.remove());
+    function separatePositions(pos, btnW, btnH){
+      const minDX = btnW + SAFE_GAP;
+      const minDY = btnH + 10;
+      for (let iter = 0; iter < 10; iter++){
+        let moved = false;
+        for (let i = 0; i < pos.length; i++){
+          for (let j = i + 1; j < pos.length; j++){
+            const a = pos[i], b = pos[j];
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            if (Math.abs(dx) < minDX && Math.abs(dy) < minDY){
+              const push = 10;
+              if (Math.abs(dx) <= Math.abs(dy)){
+                const dir = dx >= 0 ? 1 : -1;
+                b.x += dir * push; a.x -= dir * push;
+              } else {
+                const dir = dy >= 0 ? 1 : -1;
+                b.y += dir * push; a.y -= dir * push;
+              }
+              moved = true;
+            }
+          }
+        }
+        if (!moved) break;
       }
     }
 
-    function fleeOnHover(btn, rate){
-      if (unlocked || submitted) return;
+    function placeInitial(){
+      const first = buttons[0];
+      const m = getStageMetrics(first);
+      const gap = Math.max(SAFE_GAP, 12);
+      const totalW = buttons.length * m.btnW + (buttons.length - 1) * gap;
 
-      const st = fleeState.get(rate);
-      if (!st) return;
+      const startX = clamp((m.usableWidth - totalW) / 2, PAD, m.usableWidth - totalW - PAD);
+      const y = clamp(m.usableTop + 10, m.usableTop + PAD, m.usableTop + (m.usableHeight - m.btnH - PAD));
 
-      st.n += 1;
+      buttons.forEach((btn, i) => {
+        btn.style.opacity = "1";
+        btn.classList.remove("flinch");
+        btn.style.transition = "transform 70ms linear, filter 120ms ease, border-color 120ms ease";
+        btn.style.transform = `translate3d(var(--x, 0px), var(--y, 0px), 0)`;
+        setPos(btn, startX + i * (m.btnW + gap), y);
+      });
 
-      const base = 8 + st.n * 9;
-      const dist = clamp(base, 12, 78);
+      ropeLine.classList.remove("on");
+      ropeLine.style.width = "0px";
+    }
 
-      const dxBias = (rate === 1) ? 1 : (rate === 3 ? -1 : (Math.random() < 0.5 ? 1 : -1));
-      const dyBias = (Math.random() < 0.5 ? 1 : -1);
-
-      const dx = st.dx + dxBias * (dist * (0.80 + Math.random()*0.55));
-      const dy = st.dy + dyBias * (dist * (0.18 + Math.random()*0.35));
-
-      st.dx = clamp(dx, -95, 95);
-      st.dy = clamp(dy, -26, 26);
-
-      btn.classList.add('flee');
-      btn.style.setProperty('--tx', `${st.dx.toFixed(0)}px`);
-      btn.style.setProperty('--ty', `${st.dy.toFixed(0)}px`);
+    function hopAllButtons(hoveredBtn){
+      if (stopHoverAndComments || submitted || isPulling) return;
+      if (floodActive) return;
 
       const now = Date.now();
-      if (now - lastHoverQuipAt > 750){
-        lastHoverQuipAt = now;
-        const line = (st.n <= 2) ? pick(sarcasmHover) : pick(sarcasmHoverEscalation);
-        addBubble('bot', line, pick(metaSnips));
-      }
+      if (now - lastHopAt < HOP_COOLDOWN) return;
+      lastHopAt = now;
 
-      if (Math.random() < 0.30) snowBurst(5);
-      setTimeout(() => btn.classList.remove('flee'), 380);
-    }
+      hopIdx++;
+      const hoveredRate = Number(hoveredBtn.dataset.rate);
 
-    function updateUI(){
-      triesText.textContent = unlocked ? "unlocked ✅" : `calibration: ${tries}/${CALIBRATION_TRIES}`;
-      pill.textContent = unlocked ? "mode: FEEDBACK" : "mode: CALIBRATION";
+      const sample = getStageMetrics(hoveredBtn);
+      const proposed = [];
 
-      if (unlocked && userPicked != null && !submitted) submitBtn.classList.remove('disabled');
-      else submitBtn.classList.add('disabled');
-
-      note.textContent = unlocked
-        ? "Unlocked. Make your actual selection now. (We will pretend to listen.)"
-        : "Calibration: hover 1–3 (if you enjoy chaos). Click any rating 4 times to unlock.";
-    }
-
-    function unlockIfReady(){
-      if (!unlocked && tries >= CALIBRATION_TRIES){
-        unlocked = true;
-        addTyping();
-        setTimeout(() => {
-          clearTyping();
-          addBubble('bot', pick(unlockQuips), "permissions: reluctantly_granted");
-          snowBurst(18);
-          updateUI();
-        }, 520);
-      }
-    }
-
-    function wireHoverHandlers(){
-      quickRow.querySelectorAll('.qr').forEach(btn => {
+      buttons.forEach((btn) => {
         const rate = Number(btn.dataset.rate);
-        btn.onmouseenter = null;
-        if (rate <= 3){
-          btn.onmouseenter = () => fleeOnHover(btn, rate);
-        }
+        const lane = laneOffsets.get(rate) ?? 0;
+        const extra = (rate === hoveredRate) ? 3 : 0;
+
+        const t = targets[(hopIdx + lane + extra) % targets.length];
+        const out = computeTargetPixel(t.ax, t.ay, btn);
+
+        const jx = (Math.random() - 0.5) * 22 * CHAOS;
+        const jy = (Math.random() - 0.5) * 18 * CHAOS;
+
+        proposed.push({ btn, x: out.x + jx, y: out.y + jy, m: out.m });
       });
+
+      separatePositions(proposed, sample.btnW, sample.btnH);
+
+      proposed.forEach(p => {
+        const m = p.m;
+        const minX = PAD;
+        const maxX = m.usableWidth - m.btnW - PAD;
+        const minY = m.usableTop + PAD;
+        const maxY = m.usableTop + (m.usableHeight - m.btnH - PAD);
+        p.x = clamp(p.x, minX, maxX);
+        p.y = clamp(p.y, minY, maxY);
+      });
+
+      proposed.forEach(p => setPos(p.btn, p.x, p.y));
     }
 
-    quickRow.addEventListener('click', (e) => {
-      const btn = e.target.closest('.qr');
-      if (!btn || submitted) return;
+    function startEmojiFlood(){
+      if (floodActive || stopHoverAndComments || submitted || isPulling) return;
+      floodActive = true;
+
+      emojiGrid.innerHTML = "";
+      for (let i = 0; i < 90; i++){
+        const cell = document.createElement("div");
+        cell.textContent = christmasEmojis[Math.floor(Math.random() * christmasEmojis.length)];
+        emojiGrid.appendChild(cell);
+      }
+      emojiFlood.classList.add("on");
+
+      clearTimeout(floodTimer);
+      floodTimer = setTimeout(() => {     // ✅ 10 seconds
+        emojiFlood.classList.remove("on");
+        emojiGrid.innerHTML = "";
+        floodActive = false;
+      }, 5_000);
+    }
+
+    function countHoverAndMaybeFlood(){
+      hoverCount++;
+      if (hoverCount % 5 === 0){
+        botTalk("🎄 Holiday Service Update: The rating panel has been replaced by seasonal emojis for 5 seconds. Please remain calm and festive.");
+        startEmojiFlood();
+      }
+    }
+
+    function getBtnCenter(btn){
+      const sx = parseFloat(getComputedStyle(btn).getPropertyValue("--x")) || 0;
+      const sy = parseFloat(getComputedStyle(btn).getPropertyValue("--y")) || 0;
+      const bw = btn.offsetWidth, bh = btn.offsetHeight;
+      return { x: sx + bw/2, y: sy + bh/2 };
+    }
+
+    function dodgeIfTooClose(mouseX, mouseY){
+      if (stopHoverAndComments || submitted || isPulling) return;
+      if (floodActive) return;
+
+      let forcedHop = false;
+      for (const btn of buttons){
+        const c = getBtnCenter(btn);
+        const dx = c.x - mouseX;
+        const dy = c.y - mouseY;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < AVOID_RADIUS){
+          btn.classList.add("flinch");
+          setTimeout(() => btn.classList.remove("flinch"), 110);
+          forcedHop = true;
+        }
+      }
+      if (forcedHop){
+        countHoverAndMaybeFlood();
+        hopAllButtons(buttons[Math.floor(Math.random()*buttons.length)]);
+        const line = pickNoRepeat(hoverComments, lastHoverLine);
+        lastHoverLine = line;
+        botTalk(line);
+      }
+    }
+
+    function nearestButton(mouseX, mouseY){
+      let best = null;
+      let bestD = Infinity;
+      for (const btn of buttons){
+        const c = getBtnCenter(btn);
+        const dx = c.x - mouseX;
+        const dy = c.y - mouseY;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d < bestD){ bestD = d; best = btn; }
+      }
+      return { btn: best, d: bestD };
+    }
+
+    function getCenterInApp(el){
+      const r = el.getBoundingClientRect();
+      const a = appRoot.getBoundingClientRect();
+      return { x: (r.left - a.left) + r.width/2, y: (r.top - a.top) + r.height/2, r };
+    }
+
+    function drawRope(from, to){
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const len = Math.max(20, Math.sqrt(dx*dx + dy*dy));
+      const angle = Math.atan2(dy, dx) * (180/Math.PI);
+      ropeLine.style.left = `${from.x}px`;
+      ropeLine.style.top  = `${from.y}px`;
+      ropeLine.style.width = `${len}px`;
+      ropeLine.style.transform = `rotate(${angle}deg)`;
+      ropeLine.classList.add("on");
+    }
+    function clearRope(){ ropeLine.classList.remove("on"); }
+    const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+    function autoResetAfterSubmit(){
+      // restore buttons + allow hover/comments again
+      submitted = false;
+      isPulling = false;
+      stopHoverAndComments = false;
+      statusLine.textContent = "Online • collecting snow-day vibes";
+      placeInitial();
+      botTalk("Reset complete. Rate Now (we regret to inform you the buttons are still evasive).");
+    }
+
+    async function onClick(btn){
+      if (submitted || isPulling) return;
+
+      stopHoverAndComments = true;   // stop hover + hover comments while submit animation runs
+      submitted = true;
+      isPulling = true;
+
+      emojiFlood.classList.remove("on");
+      emojiGrid.innerHTML = "";
+      floodActive = false;
+
+      helpToast.classList.remove("on");
+      statusLine.textContent = "Online • rating locked";
 
       const rate = Number(btn.dataset.rate);
-      addBubble('user', `I rate it ${rate}/5.`);
+      const emojiMap = {1:"💀",2:"🥶",3:"🤷",4:"🔥",5:"✨"};
 
-      if (!unlocked){
-        tries++;
-        addTyping();
-        setTimeout(() => {
-          clearTyping();
-          addBubble('bot', `${pick(sarcasmClickCal)} (attempt ${tries}/${CALIBRATION_TRIES})`, pick(metaSnips));
-          snowBurst(rate <= 3 ? 10 : 6);
-          updateUI();
-          unlockIfReady();
-        }, 420);
-        return;
-      }
+      addBubble('user', `I rate my ride <b>${rate}/5</b>.`);
 
-      userPicked = rate;
-      displayed = computeDisplayed(rate);
+      const sceneRow = document.createElement('div');
+      sceneRow.className = 'row user';
+      sceneRow.innerHTML = `
+        <div style="width:24px;"></div>
+        <div class="pullScene">
+          <div class="pullBotWrap tugging" id="pullBotWrap">
+            <div class="pullBotHeader">
+              <div class="name">ConnX Bot</div>
+              <div class="status" id="pullStatus">aiming…</div>
+            </div>
 
-      addTyping();
-      setTimeout(() => {
-        clearTyping();
+            <div class="heldChip" id="heldChip"><span>${emojiMap[rate]}</span><span>${rate}/5</span></div>
 
-        if (rate === 1){
-          addBubble('bot',
-            `Thank you! Interpreting “1 ⭐” as “3 ⭐”, because reality is optional.`,
-            "model: blizzard-interpretation-v2 • confidence: 0.51"
-          );
-          snowBurst(20);
-        } else {
-          const band = (rate >= 4) ? "high" : (rate === 3 ? "mid" : "low");
-          addBubble('bot',
-            `${pick(postUnlockLines[band])} Recorded ${displayed}/5.`,
-            pick(metaSnips)
-          );
-          if (Math.random() < 0.25) snowBurst(8);
-        }
-
-        note.textContent = `Selected: clicked ${userPicked}/5, displayed ${displayed}/5. Ready to submit.`;
-        updateUI();
-      }, 520);
-    });
-
-    resetBtn.addEventListener('click', () => {
-      tries = 0;
-      unlocked = false;
-      submitted = false;
-      userPicked = null;
-      displayed = null;
-      lastHoverQuipAt = 0;
-
-      for (const st of fleeState.values()){
-        st.dx = 0; st.dy = 0; st.n = 0;
-      }
-      quickRow.querySelectorAll('.qr').forEach(b => {
-        b.style.setProperty('--tx', '0px');
-        b.style.setProperty('--ty', '0px');
-        b.classList.remove('flee');
-      });
-
-      chat.innerHTML = `
-        <div class="bubbleRow bot">
-          <div class="avatar">🤖</div>
-          <div class="bubble bot">
-            Hi! I’m RideBot. I can help you rate your ride.
-            <div class="meta">We value your feedback. We also value cardio.</div>
+            <svg class="robot" viewBox="0 0 180 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <ellipse cx="92" cy="120" rx="58" ry="8" fill="rgba(15,23,42,0.08)"/>
+              <rect x="72" y="92" width="16" height="28" rx="7" fill="rgba(10,42,74,0.08)" stroke="rgba(10,42,74,0.14)"/>
+              <rect x="96" y="92" width="16" height="28" rx="7" fill="rgba(10,42,74,0.08)" stroke="rgba(10,42,74,0.14)"/>
+              <rect x="58" y="54" width="68" height="50" rx="18" fill="white" stroke="rgba(10,42,74,0.18)"/>
+              <rect x="66" y="64" width="52" height="18" rx="9" fill="rgba(10,42,74,0.05)" stroke="rgba(10,42,74,0.12)"/>
+              <circle cx="80" cy="73" r="3.6" fill="rgba(10,42,74,0.70)"/>
+              <circle cx="104" cy="73" r="3.6" fill="rgba(10,42,74,0.70)"/>
+              <rect x="88" y="82" width="8" height="6" rx="3" fill="rgba(10,42,74,0.20)"/>
+              <rect x="64" y="16" width="56" height="44" rx="16" fill="white" stroke="rgba(10,42,74,0.18)"/>
+              <rect x="72" y="26" width="40" height="14" rx="7" fill="rgba(10,42,74,0.05)" stroke="rgba(10,42,74,0.12)"/>
+              <circle cx="84" cy="33" r="3.2" fill="rgba(10,42,74,0.70)"/>
+              <circle cx="100" cy="33" r="3.2" fill="rgba(10,42,74,0.70)"/>
+              <line x1="92" y1="16" x2="92" y2="6" stroke="rgba(10,42,74,0.25)" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="92" cy="4" r="4" fill="rgba(10,42,74,0.10)" stroke="rgba(10,42,74,0.18)"/>
+              <g>
+                <rect x="40" y="62" width="22" height="12" rx="6" fill="rgba(10,42,74,0.08)" stroke="rgba(10,42,74,0.14)"/>
+                <circle cx="38" cy="68" r="7" fill="rgba(10,42,74,0.08)" stroke="rgba(10,42,74,0.14)"/>
+              </g>
+              <g class="armTug">
+                <rect x="124" y="58" width="26" height="14" rx="7" fill="rgba(10,42,74,0.08)" stroke="rgba(10,42,74,0.14)"/>
+                <circle cx="154" cy="65" r="8" fill="rgba(10,42,74,0.08)" stroke="rgba(10,42,74,0.14)"/>
+                <rect x="158" y="61" width="12" height="8" rx="4" fill="rgba(10,42,74,0.12)" stroke="rgba(10,42,74,0.14)"/>
+              </g>
+            </svg>
           </div>
         </div>
-        <div class="bubbleRow bot">
-          <div class="avatar">🤖</div>
-          <div class="bubble bot">
-            Calibration mode: make 4 attempts. Then you may submit your actual opinion.
-            <div class="meta">Hover 1–3 to watch them develop independence.</div>
-          </div>
-        </div>
+        <div class="avatar">🧑</div>
       `;
-      statusLine.textContent = "Online • calibrating your ‘truth’";
-      wireHoverHandlers();
-      updateUI();
+      chat.appendChild(sceneRow);
       scrollToBottom();
+
+      await delay(160);
+
+      const wrap = sceneRow.querySelector('#pullBotWrap');
+      const status = sceneRow.querySelector('#pullStatus');
+      const heldChip = sceneRow.querySelector('#heldChip');
+
+      const botPoint = getCenterInApp(wrap);
+      const btnPoint = getCenterInApp(btn);
+
+      const from = { x: botPoint.x + botPoint.r.width/2 - 22, y: botPoint.y + 8 };
+      const to   = { x: btnPoint.x, y: btnPoint.y + 6 };
+
+      status.textContent = "throwing rope…";
+      drawRope(from, to);
+
+      await delay(220);
+
+      status.textContent = "pulling…";
+
+      const a = appRoot.getBoundingClientRect();
+      const btnRect = btnPoint.r;
+
+      const currX = Number(getComputedStyle(btn).getPropertyValue("--x").replace("px","")) || 0;
+      const currY = Number(getComputedStyle(btn).getPropertyValue("--y").replace("px","")) || 0;
+
+      const btnAbsX = (btnRect.left - a.left);
+      const btnAbsY = (btnRect.top - a.top);
+
+      const target = { x: botPoint.x - (btnRect.width/2) + 6, y: botPoint.y + 16 };
+      const deltaAbsX = target.x - btnAbsX;
+      const deltaAbsY = target.y - btnAbsY;
+
+      btn.style.transition = "transform 820ms cubic-bezier(.16,.9,.18,1)";
+      btn.style.transform = `translate3d(${currX + deltaAbsX}px, ${currY + deltaAbsY}px, 0) rotate(-8deg)`;
+
+      await delay(850);
+
+      btn.style.opacity = "0";
+      clearRope();
+      status.textContent = "secured.";
+      wrap.classList.remove("tugging");
+      heldChip.style.animationDelay = "0ms";
+
+      const pool = submitComments[rate] || ["Noted."];
+      const line = pickNoRepeat(pool, lastSubmitLine);
+      lastSubmitLine = line;
+
+
+      // ✅ Auto-reset the rating buttons after submission
+      setTimeout(autoResetAfterSubmit, 2600);
+    }
+
+    stage.addEventListener('mousemove', (e) => {
+      if (stopHoverAndComments || submitted || isPulling) return;
+
+      const r = stage.getBoundingClientRect();
+      const mx = e.clientX - r.left;
+      const my = e.clientY - r.top;
+
+      dodgeIfTooClose(mx, my);
+
+      if (!floodActive && Math.random() < 0.012 * CHAOS){
+        helpToast.classList.add('on');
+        helpToast.textContent = pick([
+          "Helpful tip: your cursor is not authorized to make contact.",
+          "Helpful tip: click closer. No, closer than that.",
+          "Helpful tip: transfers required.",
+          "Helpful tip: mind the snow-gapped gap."
+        ]);
+        setTimeout(() => helpToast.classList.remove('on'), 850);
+      }
     });
 
-    submitBtn.addEventListener('click', () => {
-      if (submitBtn.classList.contains('disabled')) return;
-      if (submitted) return;
+    stage.addEventListener('click', (e) => {
+      if (submitted || isPulling) return;
+      if (floodActive) return;
 
-      submitted = true;
-      addTyping();
-      setTimeout(() => {
-        clearTyping();
+      const r = stage.getBoundingClientRect();
+      const mx = e.clientX - r.left;
+      const my = e.clientY - r.top;
 
-        console.log("SUBMIT", {
-          clickedRating: userPicked,
-          displayedRating: displayed,
-          ts: new Date().toISOString(),
-          widget: "RideBot Chat Rating (snow + hover-flee calibration)"
+      const { btn, d } = nearestButton(mx, my);
+
+      if (btn && d <= CLICK_SNAP_RADIUS){
+        onClick(btn);
+      } else {
+        buttons.forEach(b => {
+          b.classList.add("flinch");
+          setTimeout(() => b.classList.remove("flinch"), 110);
         });
+        hopAllButtons(btn || buttons[0]);
 
-        addBubble('bot', `✅ Submitted! Final recorded rating: ${displayed}/5.`, "thanks. we will definitely ‘circle back’.");
-        snowBurst(userPicked === 1 ? 26 : 14);
+        countHoverAndMaybeFlood();
 
-        note.textContent = `Submitted: clicked ${userPicked}/5, recorded ${displayed}/5.`;
-        submitBtn.classList.add('disabled');
-      }, 520);
+        const line = pickNoRepeat(hoverComments, lastHoverLine);
+        lastHoverLine = line;
+        botTalk(line);
+      }
     });
 
-    wireHoverHandlers();
-    updateUI();
-    scrollToBottom();
+    window.addEventListener('load', placeInitial);
+    window.addEventListener('resize', () => {
+      if (!submitted && !isPulling) placeInitial();
+    });
   </script>
 </body>
 </html>
